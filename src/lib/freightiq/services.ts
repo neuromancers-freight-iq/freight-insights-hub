@@ -67,7 +67,8 @@ export async function postForecast(req: ForecastRequest): Promise<ForecastResult
     series.push({ label: `D-${i}`, historical: Number(v.toFixed(2)) });
   }
   series[series.length - 1] = {
-    ...series[series.length - 1],
+    label: `D-1`,
+    historical: Number(v.toFixed(2)),
     forecast: Number(v.toFixed(2)),
     band: [Number(v.toFixed(2)), Number(v.toFixed(2))],
   };

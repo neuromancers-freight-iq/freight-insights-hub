@@ -153,7 +153,7 @@ function Dashboard() {
           <Panel title="Active Market Signals" description="Live indicators feeding the models">
             <ul className="space-y-3">
               {data?.signals.map((s, i) => {
-                const Icon = SIGNAL_ICONS[i % SIGNAL_ICONS.length];
+                const Icon = SIGNAL_ICONS[i % SIGNAL_ICONS.length] ?? TrendingUp;
                 const tone =
                   s.tone === "positive"
                     ? "positive"

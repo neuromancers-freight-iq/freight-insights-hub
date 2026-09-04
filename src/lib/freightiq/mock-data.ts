@@ -110,8 +110,8 @@ export function marketTrend(days: number) {
     historical: v,
   })) as MarketData["trend"];
 
-  let last = hist[hist.length - 1];
-  out[out.length - 1] = { ...out[out.length - 1], forecast: last, band: [last, last] };
+  let last = hist[hist.length - 1] ?? 23.4;
+  out[out.length - 1] = { label: `D-1`, historical: last, forecast: last, band: [last, last] };
   const rnd = seeded(`fc-${days}`);
   for (let i = 1; i <= forecastPoints; i++) {
     last += 0.12 + (rnd() - 0.4) * 0.35;
@@ -188,15 +188,16 @@ const ROUTES = [
 export const FREIGHT_ROWS: FreightRow[] = Array.from({ length: 48 }, (_, i) => {
   const rnd = seeded(`row-${i}`);
   const d = new Date(Date.UTC(2026, 7, 1 + i));
-  const cargo = CARGO_TYPES[i % 3];
-  const vessel = VESSEL_CLASSES[i % 4];
+  const cargo = CARGO_TYPES[i % CARGO_TYPES.length]!;
+  const vessel = VESSEL_CLASSES[i % VESSEL_CLASSES.length]!;
+  const conditions = ["Clear", "Moderate", "Congested"] as const;
   return {
     date: d.toISOString().slice(0, 10),
-    route: ROUTES[i % ROUTES.length],
+    route: ROUTES[i % ROUTES.length]!,
     cargo,
     vessel,
     rate: Number((17 + rnd() * 11).toFixed(2)),
     fuel: Math.round(560 + rnd() * 70),
-    condition: (["Clear", "Moderate", "Congested"] as const)[Math.floor(rnd() * 3)],
+    condition: conditions[Math.floor(rnd() * 3)] ?? "Clear",
   };
 });
