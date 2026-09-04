@@ -110,8 +110,8 @@ export function marketTrend(days: number) {
     historical: v,
   })) as MarketData["trend"];
 
-  let last = hist[hist.length - 1];
-  out[out.length - 1] = { ...out[out.length - 1], forecast: last, band: [last, last] };
+  let last = hist[hist.length - 1] ?? 23.4;
+  out[out.length - 1] = { label: `D-1`, historical: last, forecast: last, band: [last, last] };
   const rnd = seeded(`fc-${days}`);
   for (let i = 1; i <= forecastPoints; i++) {
     last += 0.12 + (rnd() - 0.4) * 0.35;
