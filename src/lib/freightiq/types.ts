@@ -145,3 +145,33 @@ export interface FreightRow {
   fuel: number;
   condition: "Clear" | "Moderate" | "Congested";
 }
+
+export interface VesselMatchRequest {
+  origin: string;
+  destination: string;
+  cargo: CargoType;
+  quantityMt: number;
+  requiredDate: string;
+  contractMonths: number;
+}
+
+export interface VesselMatch {
+  vessel: VesselClass;
+  capacityRange: [number, number];
+  portCompatible: boolean;
+  portNote: string;
+  freightLow: number;
+  freightHigh: number;
+  waitingDays: number;
+  score: number;
+  recommended: boolean;
+  totalCost: number;
+  laden: number;
+  factors: { name: string; score: number; note: string }[];
+  summary: string;
+}
+
+export interface VesselMatchResult {
+  matches: VesselMatch[];
+  rationale: string;
+}
