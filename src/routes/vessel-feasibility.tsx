@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { AlertTriangle, CheckCircle2, Ship } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Ship, Sparkles, XCircle } from "lucide-react";
 import { AppShell } from "@/components/freightiq/AppShell";
 import {
   AiInsight,
@@ -12,6 +12,7 @@ import {
   PageHeader,
   Panel,
   Tag,
+  formatUsd,
 } from "@/components/freightiq/primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,60 +23,62 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  DESTINATION_PORTS,
-  ORIGIN_PORTS,
-  VESSEL_CLASSES,
-  VESSEL_SPECS,
-} from "@/lib/freightiq/mock-data";
-import { postVesselFeasibility } from "@/lib/freightiq/services";
-import type { FeasibilityResult, VesselClass } from "@/lib/freightiq/types";
+import { CARGO_TYPES, DESTINATION_PORTS, ORIGIN_PORTS } from "@/lib/freightiq/mock-data";
+import { postVesselMatch } from "@/lib/freightiq/services";
+import type { CargoType, VesselMatch, VesselMatchResult } from "@/lib/freightiq/types";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/vessel-feasibility")({
   head: () => ({
     meta: [
-      { title: "Vessel Feasibility Analysis — FreightIQ" },
+      { title: "Vessel Recommendation — FreightIQ" },
       {
         name: "description",
         content:
-          "Score vessel suitability against cargo capacity, draft limits, port compatibility and voyage economics.",
+          "Enter route, cargo and laycan — FreightIQ scores Handysize to Capesize tonnage and recommends the best vessel class.",
       },
-      { property: "og:title", content: "Vessel Feasibility Analysis — FreightIQ" },
+      { property: "og:title", content: "Vessel Recommendation — FreightIQ" },
       {
         property: "og:description",
-        content: "Check whether a vessel is operationally and economically suitable for a voyage.",
+        content: "System-recommended vessel class based on capacity, draft, freight and waiting time.",
       },
     ],
   }),
   component: FeasibilityPage,
 });
 
+const CONTRACT_OPTIONS = [
+  { value: 1, label: "Single voyage (1 month)" },
+  { value: 3, label: "Short period — 3 months" },
+  { value: 6, label: "Period — 6 months" },
+  { value: 12, label: "Period — 12 months" },
+];
+
 function FeasibilityPage() {
-  const [vessel, setVessel] = useState<VesselClass>("Panamax");
-  const spec = VESSEL_SPECS[vessel];
-  const [dwt, setDwt] = useState(spec.dwt);
-  const [draft, setDraft] = useState(spec.draft);
-  const [capacity, setCapacity] = useState(spec.capacity);
   const [origin, setOrigin] = useState("Newcastle");
   const [destination, setDestination] = useState("Paradip");
-  const [quantity, setQuantity] = useState(72000);
+  const [cargo, setCargo] = useState<CargoType>("Coal");
+  const [quantity, setQuantity] = useState(75000);
+  const [requiredDate, setRequiredDate] = useState("2026-10-12");
+  const [contractMonths, setContractMonths] = useState(3);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<FeasibilityResult | null>(null);
-
-  function pickVessel(v: VesselClass) {
-    setVessel(v);
-    setDwt(VESSEL_SPECS[v].dwt);
-    setDraft(VESSEL_SPECS[v].draft);
-    setCapacity(VESSEL_SPECS[v].capacity);
-  }
+  const [result, setResult] = useState<VesselMatchResult | null>(null);
+  const [openVessel, setOpenVessel] = useState<string | null>(null);
 
   async function run() {
     setLoading(true);
     setResult(null);
-    const res = await postVesselFeasibility({
-      vessel, dwt, draft, capacity, origin, destination, quantityMt: quantity,
+    setOpenVessel(null);
+    const res = await postVesselMatch({
+      origin,
+      destination,
+      cargo,
+      quantityMt: quantity,
+      requiredDate,
+      contractMonths,
     });
     setResult(res);
+    setOpenVessel(res.matches[0]?.vessel ?? null);
     setLoading(false);
   }
 
@@ -83,31 +86,14 @@ function FeasibilityPage() {
     <AppShell>
       <PageHeader
         eyebrow="Fleet Suitability"
-        title="Vessel Feasibility Analysis"
-        subtitle="Evaluate whether a vessel is operationally and economically suitable for the selected cargo and voyage."
+        title="Vessel Recommendation"
+        subtitle="Describe the cargo and the route — FreightIQ evaluates every vessel class and recommends the best fit. No vessel selection required."
         actions={<DemoTag label="Prototype Analysis" />}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.35fr]">
-        <Panel title="Vessel & Voyage Inputs" description="Defaults follow class benchmarks">
+      <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr]">
+        <Panel title="Requirement" description="What needs to move, and when">
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Vessel Type">
-              <Select value={vessel} onValueChange={(v) => pickVessel(v as VesselClass)}>
-                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {VESSEL_CLASSES.map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Deadweight" hint="MT">
-              <Input type="number" value={dwt} onChange={(e) => setDwt(+e.target.value)} />
-            </Field>
-            <Field label="Draft" hint="metres">
-              <Input type="number" step="0.1" value={draft} onChange={(e) => setDraft(+e.target.value)} />
-            </Field>
-            <Field label="Cargo Capacity" hint="MT">
-              <Input type="number" value={capacity} onChange={(e) => setCapacity(+e.target.value)} />
-            </Field>
             <Field label="Origin Port">
               <Select value={origin} onValueChange={setOrigin}>
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
@@ -121,97 +107,101 @@ function FeasibilityPage() {
                 <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {DESTINATION_PORTS.map((p) => (
-                    <SelectItem key={p.code} value={p.name}>
-                      {p.name} · {p.maxDraft} m
-                    </SelectItem>
+                    <SelectItem key={p.code} value={p.name}>{p.name} · {p.maxDraft} m</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Cargo Type">
+              <Select value={cargo} onValueChange={(v) => setCargo(v as CargoType)}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CARGO_TYPES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                 </SelectContent>
               </Select>
             </Field>
             <Field label="Cargo Quantity" hint="MT">
               <Input type="number" value={quantity} onChange={(e) => setQuantity(+e.target.value)} />
             </Field>
+            <Field label="Required Date" hint="laycan">
+              <Input type="date" value={requiredDate} onChange={(e) => setRequiredDate(e.target.value)} />
+            </Field>
+            <Field label="Contract Duration">
+              <Select value={String(contractMonths)} onValueChange={(v) => setContractMonths(+v)}>
+                <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {CONTRACT_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={String(o.value)}>{o.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
           </div>
           <Button size="lg" className="mt-6 w-full" onClick={run} disabled={loading}>
-            <Ship className="size-4" /> Evaluate Vessel
+            <Sparkles className="size-4" /> Recommend Vessel
           </Button>
+          <p className="mt-3 text-xs text-muted-foreground">
+            All four classes — Handysize, Supramax, Panamax and Capesize — are scored automatically.
+          </p>
         </Panel>
 
         <div className="space-y-6">
           {loading ? (
             <AiLoading
               steps={[
-                "Evaluating vessel constraints…",
+                "Analysing market signals…",
+                "Matching parcel size to vessel classes…",
                 "Checking berth draft and port limits…",
-                "Scoring voyage economics…",
-                "Compiling feasibility verdict…",
+                "Estimating freight and waiting time…",
+                "Ranking the best vessel…",
               ]}
             />
           ) : !result ? (
             <EmptyState
               icon={<Ship className="size-8" />}
-              title="Awaiting evaluation"
-              description="Enter the vessel particulars and route, then run the evaluation to see a full feasibility score breakdown."
+              title="Awaiting requirement"
+              description="Enter the route, cargo and laycan, then run the analysis to see every vessel class scored and ranked."
             />
           ) : (
             <>
-              <Panel title="Feasibility Score" description={`${vessel} · ${origin} → ${destination}`}>
-                <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center">
-                  <ScoreDial score={result.score} />
-                  <div className="min-w-0 flex-1">
-                    <Tag tone={result.score >= 85 ? "positive" : result.score >= 65 ? "warning" : "critical"}>
-                      {result.label}
-                    </Tag>
-                    <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                      Composite score across capacity fit, draft margin, port compatibility,
-                      economics and operational risk for the configured voyage.
-                    </p>
-                  </div>
+              {result.matches
+                .filter((m) => m.recommended)
+                .map((m) => <RecommendedCard key={m.vessel} match={m} />)}
+
+              <Panel
+                title="Vessel Class Comparison"
+                description="Ranked by optimisation score · click a row for detail"
+                action={<DemoTag label="Simulated" />}
+                bodyClassName="p-0"
+              >
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[820px] text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+                        <th className="px-5 py-3 font-medium">Vessel Type</th>
+                        <th className="px-4 py-3 font-medium">Approx. Capacity</th>
+                        <th className="px-4 py-3 font-medium">Port Compat.</th>
+                        <th className="px-4 py-3 font-medium">Est. Freight</th>
+                        <th className="px-4 py-3 font-medium">Waiting</th>
+                        <th className="px-4 py-3 font-medium">Score</th>
+                        <th className="px-5 py-3 font-medium">Recommendation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.matches.map((m) => (
+                        <VesselRow
+                          key={m.vessel}
+                          match={m}
+                          open={openVessel === m.vessel}
+                          onToggle={() => setOpenVessel(openVessel === m.vessel ? null : m.vessel)}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-
-                <ul className="mt-6 space-y-4">
-                  {result.checks.map((c) => (
-                    <li key={c.name}>
-                      <div className="mb-1.5 flex flex-wrap items-center justify-between gap-2">
-                        <span className="text-sm">{c.name}</span>
-                        <Tag
-                          tone={
-                            c.status === "PASS" || c.status === "GOOD"
-                              ? "positive"
-                              : c.status === "WATCH"
-                                ? "warning"
-                                : "critical"
-                          }
-                        >
-                          {c.status}
-                        </Tag>
-                      </div>
-                      <Meter
-                        value={c.score}
-                        tone={c.score >= 80 ? "success" : c.score >= 60 ? "warning" : "destructive"}
-                      />
-                      <p className="mt-1 text-xs text-muted-foreground">{c.note}</p>
-                    </li>
-                  ))}
-                </ul>
               </Panel>
 
-              <Panel title="Potential Constraints">
-                <ul className="space-y-3">
-                  {result.constraints.map((c) => (
-                    <li key={c} className="flex gap-3 text-sm text-muted-foreground">
-                      {c.startsWith("No blocking") ? (
-                        <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-success" />
-                      ) : (
-                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning" />
-                      )}
-                      {c}
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
-
-              <AiInsight title="AI Recommendation">{result.recommendation}</AiInsight>
+              <AiInsight title="Why this vessel">{result.rationale}</AiInsight>
             </>
           )}
         </div>
@@ -220,24 +210,155 @@ function FeasibilityPage() {
   );
 }
 
-function ScoreDial({ score }: { score: number }) {
-  const r = 52;
-  const c = 2 * Math.PI * r;
-  const tone = score >= 85 ? "var(--color-success)" : score >= 65 ? "var(--color-warning)" : "var(--color-destructive)";
+function scoreTone(score: number) {
+  return score >= 80 ? "success" : score >= 60 ? "warning" : "destructive";
+}
+
+function RecommendedCard({ match }: { match: VesselMatch }) {
   return (
-    <div className="relative size-36 shrink-0">
-      <svg viewBox="0 0 128 128" className="size-full -rotate-90">
-        <circle cx="64" cy="64" r={r} fill="none" stroke="var(--color-secondary)" strokeWidth="10" />
-        <circle
-          cx="64" cy="64" r={r} fill="none" stroke={tone} strokeWidth="10" strokeLinecap="round"
-          strokeDasharray={c} strokeDashoffset={c - (c * score) / 100}
-          style={{ transition: "stroke-dashoffset 900ms ease" }}
-        />
-      </svg>
-      <div className="absolute inset-0 grid place-content-center text-center">
-        <p className="num text-3xl font-semibold leading-none">{score}</p>
-        <p className="mt-1 text-[11px] text-muted-foreground">/ 100</p>
+    <Panel className="border-primary/30 bg-primary/[0.05]">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <Tag tone="info">★ Recommended</Tag>
+          <h2 className="font-display mt-3 text-2xl font-semibold">{match.vessel}</h2>
+          <p className="mt-1 text-sm text-muted-foreground">{match.summary}</p>
+        </div>
+        <div className="text-right">
+          <p className="num text-4xl font-semibold leading-none">{match.score}</p>
+          <p className="mt-1 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">Score / 100</p>
+        </div>
       </div>
+      <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Capacity" value={`${(match.capacityRange[0] / 1000).toFixed(0)}–${(match.capacityRange[1] / 1000).toFixed(0)}k t`} />
+        <Stat
+          label="Port compatibility"
+          value={match.portCompatible ? "Compatible" : "Restricted"}
+          tone={match.portCompatible ? "positive" : "critical"}
+        />
+        <Stat label="Estimated freight" value={`$${match.freightLow}–${match.freightHigh}/t`} />
+        <Stat label="Expected waiting" value={`${match.waitingDays} days`} />
+      </dl>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Indicative voyage value {formatUsd(match.totalCost)} · laden draft {match.laden} m
+      </p>
+    </Panel>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  tone = "neutral",
+}: {
+  label: string;
+  value: string;
+  tone?: "neutral" | "positive" | "critical";
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface/60 p-4">
+      <dt className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{label}</dt>
+      <dd
+        className={cn(
+          "num mt-2 text-base font-semibold",
+          tone === "positive" && "text-success",
+          tone === "critical" && "text-destructive",
+        )}
+      >
+        {value}
+      </dd>
     </div>
+  );
+}
+
+function VesselRow({
+  match,
+  open,
+  onToggle,
+}: {
+  match: VesselMatch;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <>
+      <tr
+        onClick={onToggle}
+        className={cn(
+          "cursor-pointer border-b border-border/70 transition-colors hover:bg-secondary/40",
+          match.recommended && "bg-primary/[0.05]",
+        )}
+      >
+        <td className="px-5 py-4">
+          <span className="flex items-center gap-2 font-medium">
+            {match.recommended ? <span className="text-primary">★</span> : null}
+            {match.vessel}
+          </span>
+        </td>
+        <td className="num px-4 py-4 text-muted-foreground">
+          {match.capacityRange[0].toLocaleString()}–{match.capacityRange[1].toLocaleString()} t
+        </td>
+        <td className="px-4 py-4">
+          {match.portCompatible ? (
+            <CheckCircle2 className="size-4 text-success" />
+          ) : (
+            <XCircle className="size-4 text-destructive" />
+          )}
+        </td>
+        <td className="num px-4 py-4">${match.freightLow}–{match.freightHigh}/t</td>
+        <td className="num px-4 py-4 text-muted-foreground">
+          <span className="inline-flex items-center gap-1.5">
+            <Clock className="size-3.5" /> {match.waitingDays} d
+          </span>
+        </td>
+        <td className="px-4 py-4">
+          <div className="flex items-center gap-2">
+            <span className="num w-7 font-semibold">{match.score}</span>
+            <div className="w-16">
+              <Meter value={match.score} tone={scoreTone(match.score)} />
+            </div>
+          </div>
+        </td>
+        <td className="px-5 py-4">
+          {match.recommended ? (
+            <Tag tone="positive">Recommended</Tag>
+          ) : match.score >= 70 ? (
+            <Tag tone="neutral">Viable alternative</Tag>
+          ) : match.portCompatible ? (
+            <Tag tone="warning">Sub-optimal</Tag>
+          ) : (
+            <Tag tone="critical">Not suitable</Tag>
+          )}
+        </td>
+      </tr>
+      {open ? (
+        <tr className="border-b border-border/70 bg-surface/40">
+          <td colSpan={7} className="px-5 py-5">
+            <p className="text-sm text-muted-foreground">{match.summary}</p>
+            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {match.factors.map((f) => (
+                <div key={f.name} className="rounded-xl border border-border bg-background/40 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-medium">{f.name}</span>
+                    <span className="num text-xs font-semibold">{f.score}</span>
+                  </div>
+                  <div className="mt-2">
+                    <Meter value={f.score} tone={scoreTone(f.score)} />
+                  </div>
+                  <p className="mt-2 text-[11px] text-muted-foreground">{f.note}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
+              {match.portCompatible ? (
+                <CheckCircle2 className="size-3.5 text-success" />
+              ) : (
+                <AlertTriangle className="size-3.5 text-warning" />
+              )}
+              {match.portNote}
+            </p>
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
