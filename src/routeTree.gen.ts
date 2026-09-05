@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DataAnalyticsRouteImport } from './routes/data-analytics'
 import { Route as ForecastRouteImport } from './routes/forecast'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as MarketIntelligenceRouteImport } from './routes/market-intelligence'
 import { Route as RecommendationsRouteImport } from './routes/recommendations'
 import { Route as SettingsRouteImport } from './routes/settings'
@@ -31,6 +32,11 @@ const DataAnalyticsRoute = DataAnalyticsRouteImport.update({
 const ForecastRoute = ForecastRouteImport.update({
   id: '/forecast',
   path: '/forecast',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketIntelligenceRoute = MarketIntelligenceRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
   '/market-intelligence': typeof MarketIntelligenceRoute
   '/recommendations': typeof RecommendationsRoute
   '/settings': typeof SettingsRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
   '/market-intelligence': typeof MarketIntelligenceRoute
   '/recommendations': typeof RecommendationsRoute
   '/settings': typeof SettingsRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
   '/market-intelligence': typeof MarketIntelligenceRoute
   '/recommendations': typeof RecommendationsRoute
   '/settings': typeof SettingsRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/data-analytics'
     | '/forecast'
+    | '/help'
     | '/market-intelligence'
     | '/recommendations'
     | '/settings'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/data-analytics'
     | '/forecast'
+    | '/help'
     | '/market-intelligence'
     | '/recommendations'
     | '/settings'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/data-analytics'
     | '/forecast'
+    | '/help'
     | '/market-intelligence'
     | '/recommendations'
     | '/settings'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DataAnalyticsRoute: typeof DataAnalyticsRoute
   ForecastRoute: typeof ForecastRoute
+  HelpRoute: typeof HelpRoute
   MarketIntelligenceRoute: typeof MarketIntelligenceRoute
   RecommendationsRoute: typeof RecommendationsRoute
   SettingsRoute: typeof SettingsRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/forecast'
       fullPath: '/forecast'
       preLoaderRoute: typeof ForecastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/market-intelligence': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DataAnalyticsRoute: DataAnalyticsRoute,
   ForecastRoute: ForecastRoute,
+  HelpRoute: HelpRoute,
   MarketIntelligenceRoute: MarketIntelligenceRoute,
   RecommendationsRoute: RecommendationsRoute,
   SettingsRoute: SettingsRoute,
