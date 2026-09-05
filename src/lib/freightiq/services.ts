@@ -14,6 +14,8 @@
 import {
   MARKET_DATA,
   VESSEL_SPECS,
+  VESSEL_CLASSES,
+  VESSEL_CAPACITY_RANGE,
   baseRate,
   distanceFor,
   marketTrend,
