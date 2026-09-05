@@ -201,3 +201,10 @@ export const FREIGHT_ROWS: FreightRow[] = Array.from({ length: 48 }, (_, i) => {
     condition: conditions[Math.floor(rnd() * 3)] ?? "Clear",
   };
 });
+
+export const VESSEL_CAPACITY_RANGE: Record<VesselClass, [number, number]> = {
+  Handysize: [25000, 40000],
+  Supramax: [45000, 60000],
+  Panamax: [75000, 85000],
+  Capesize: [140000, 180000],
+};

@@ -10,7 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DataAnalyticsRouteImport } from './routes/data-analytics'
 import { Route as ForecastRouteImport } from './routes/forecast'
+import { Route as HelpRouteImport } from './routes/help'
+import { Route as MarketIntelligenceRouteImport } from './routes/market-intelligence'
+import { Route as RecommendationsRouteImport } from './routes/recommendations'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as VesselFeasibilityRouteImport } from './routes/vessel-feasibility'
 import { Route as VoyagePlannerRouteImport } from './routes/voyage-planner'
 
@@ -19,9 +24,34 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DataAnalyticsRoute = DataAnalyticsRouteImport.update({
+  id: '/data-analytics',
+  path: '/data-analytics',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ForecastRoute = ForecastRouteImport.update({
   id: '/forecast',
   path: '/forecast',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketIntelligenceRoute = MarketIntelligenceRouteImport.update({
+  id: '/market-intelligence',
+  path: '/market-intelligence',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecommendationsRoute = RecommendationsRouteImport.update({
+  id: '/recommendations',
+  path: '/recommendations',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VesselFeasibilityRoute = VesselFeasibilityRouteImport.update({
@@ -37,34 +67,82 @@ const VoyagePlannerRoute = VoyagePlannerRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/settings': typeof SettingsRoute
   '/vessel-feasibility': typeof VesselFeasibilityRoute
   '/voyage-planner': typeof VoyagePlannerRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/settings': typeof SettingsRoute
   '/vessel-feasibility': typeof VesselFeasibilityRoute
   '/voyage-planner': typeof VoyagePlannerRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/data-analytics': typeof DataAnalyticsRoute
   '/forecast': typeof ForecastRoute
+  '/help': typeof HelpRoute
+  '/market-intelligence': typeof MarketIntelligenceRoute
+  '/recommendations': typeof RecommendationsRoute
+  '/settings': typeof SettingsRoute
   '/vessel-feasibility': typeof VesselFeasibilityRoute
   '/voyage-planner': typeof VoyagePlannerRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/forecast' | '/vessel-feasibility' | '/voyage-planner'
+  fullPaths:
+    | '/'
+    | '/data-analytics'
+    | '/forecast'
+    | '/help'
+    | '/market-intelligence'
+    | '/recommendations'
+    | '/settings'
+    | '/vessel-feasibility'
+    | '/voyage-planner'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/forecast' | '/vessel-feasibility' | '/voyage-planner'
-  id: '__root__' | '/' | '/forecast' | '/vessel-feasibility' | '/voyage-planner'
+  to:
+    | '/'
+    | '/data-analytics'
+    | '/forecast'
+    | '/help'
+    | '/market-intelligence'
+    | '/recommendations'
+    | '/settings'
+    | '/vessel-feasibility'
+    | '/voyage-planner'
+  id:
+    | '__root__'
+    | '/'
+    | '/data-analytics'
+    | '/forecast'
+    | '/help'
+    | '/market-intelligence'
+    | '/recommendations'
+    | '/settings'
+    | '/vessel-feasibility'
+    | '/voyage-planner'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DataAnalyticsRoute: typeof DataAnalyticsRoute
   ForecastRoute: typeof ForecastRoute
+  HelpRoute: typeof HelpRoute
+  MarketIntelligenceRoute: typeof MarketIntelligenceRoute
+  RecommendationsRoute: typeof RecommendationsRoute
+  SettingsRoute: typeof SettingsRoute
   VesselFeasibilityRoute: typeof VesselFeasibilityRoute
   VoyagePlannerRoute: typeof VoyagePlannerRoute
 }
@@ -78,11 +156,46 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/data-analytics': {
+      id: '/data-analytics'
+      path: '/data-analytics'
+      fullPath: '/data-analytics'
+      preLoaderRoute: typeof DataAnalyticsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/forecast': {
       id: '/forecast'
       path: '/forecast'
       fullPath: '/forecast'
       preLoaderRoute: typeof ForecastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market-intelligence': {
+      id: '/market-intelligence'
+      path: '/market-intelligence'
+      fullPath: '/market-intelligence'
+      preLoaderRoute: typeof MarketIntelligenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recommendations': {
+      id: '/recommendations'
+      path: '/recommendations'
+      fullPath: '/recommendations'
+      preLoaderRoute: typeof RecommendationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vessel-feasibility': {
@@ -104,7 +217,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DataAnalyticsRoute: DataAnalyticsRoute,
   ForecastRoute: ForecastRoute,
+  HelpRoute: HelpRoute,
+  MarketIntelligenceRoute: MarketIntelligenceRoute,
+  RecommendationsRoute: RecommendationsRoute,
+  SettingsRoute: SettingsRoute,
   VesselFeasibilityRoute: VesselFeasibilityRoute,
   VoyagePlannerRoute: VoyagePlannerRoute,
 }

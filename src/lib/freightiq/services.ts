@@ -14,6 +14,8 @@
 import {
   MARKET_DATA,
   VESSEL_SPECS,
+  VESSEL_CLASSES,
+  VESSEL_CAPACITY_RANGE,
   baseRate,
   distanceFor,
   marketTrend,
@@ -28,6 +30,8 @@ import type {
   MarketData,
   RecommendationResult,
   SeriesPoint,
+  VesselMatchRequest,
+  VesselMatchResult,
   VoyageRequest,
   VoyageResult,
 } from "./types";
@@ -38,6 +42,7 @@ export const API_ENDPOINTS = {
   voyageAnalysis: "POST /voyage-analysis",
   vesselFeasibility: "POST /vessel-feasibility",
   recommendations: "POST /recommendations",
+  vesselMatch: "POST /vessel-recommendation",
 } as const;
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -210,5 +215,96 @@ export async function postRecommendations(): Promise<RecommendationResult> {
         notes: ["Draft-restricted discharge port", "Highest freight rate per MT"],
       },
     ],
+  };
+}
+
+
+export async function postVesselMatch(req: VesselMatchRequest): Promise<VesselMatchResult> {
+  await delay(2000);
+  const distance = distanceFor(req.origin, req.destination);
+  const destPort = ALL_PORTS.find((p) => p.name === req.destination);
+  const maxDraft = destPort?.maxDraft ?? 15;
+  const originPort = ALL_PORTS.find((p) => p.name === req.origin);
+
+  const matches = VESSEL_CLASSES.map((vessel) => {
+    const spec = VESSEL_SPECS[vessel];
+    const range = VESSEL_CAPACITY_RANGE[vessel];
+    const rnd = seeded(`${vessel}${req.origin}${req.destination}${req.cargo}${req.quantityMt}`);
+
+    // Capacity fit: how well the parcel fits the class without part-cargo or overflow.
+    const utilisation = req.quantityMt / spec.capacity;
+    const capacityScore =
+      utilisation > 1 ? Math.max(20, 100 - (utilisation - 1) * 220) : Math.round(48 + utilisation * 50);
+
+    // Port compatibility: laden draft against destination berth limit.
+    const laden = Number((spec.draft * Math.min(1, 0.72 + Math.min(1, utilisation) * 0.28)).toFixed(1));
+    const draftMargin = Number((maxDraft - laden).toFixed(1));
+    const portCompatible = draftMargin >= 0.5;
+    const portScore = portCompatible ? Math.min(98, 66 + draftMargin * 11) : Math.max(15, 45 + draftMargin * 14);
+
+    // Waiting time: congestion at both ends plus tonnage scarcity for the class.
+    const congestionDays = (c?: string) => (c === "High" ? 3.4 : c === "Moderate" ? 1.6 : 0.6);
+    const scarcity = vessel === "Capesize" ? 1.5 : vessel === "Panamax" ? 0.7 : vessel === "Supramax" ? 0.5 : 0.4;
+    const waitingDays = Number(
+      ((congestionDays(originPort?.congestion) + congestionDays(destPort?.congestion)) / 2 + scarcity * rnd() + 0.2).toFixed(1),
+    );
+    const waitScore = Math.max(30, Math.round(100 - waitingDays * 13));
+
+    // Economics: freight per tonne and voyage cost for the parcel.
+    const mid = baseRate(req.cargo, vessel, distance);
+    const partCargoPenalty = utilisation < 0.6 ? (0.6 - utilisation) * 9 : 0;
+    const freightMid = mid + partCargoPenalty + waitingDays * 0.25;
+    const freightLow = Number((freightMid * 0.96).toFixed(1));
+    const freightHigh = Number((freightMid * 1.06).toFixed(1));
+    const totalCost = Math.round(freightMid * req.quantityMt);
+    const economicsScore = Math.round(Math.max(25, 118 - freightMid * 2.6));
+
+    const durationScore =
+      req.contractMonths >= 6
+        ? vessel === "Panamax" || vessel === "Capesize"
+          ? 88
+          : 74
+        : vessel === "Handysize" || vessel === "Supramax"
+          ? 86
+          : 78;
+
+    const score = Math.round(
+      capacityScore * 0.3 + portScore * 0.25 + economicsScore * 0.22 + waitScore * 0.13 + durationScore * 0.1,
+    );
+
+    return {
+      vessel,
+      capacityRange: range,
+      portCompatible,
+      portNote: portCompatible
+        ? `${draftMargin.toFixed(1)} m draft margin at ${req.destination}`
+        : `Laden draft ${laden} m exceeds ${req.destination} limit of ${maxDraft} m`,
+      freightLow,
+      freightHigh,
+      waitingDays,
+      score: Math.max(12, Math.min(99, score)),
+      recommended: false,
+      totalCost,
+      laden,
+      factors: [
+        { name: "Cargo Capacity Fit", score: Math.round(capacityScore), note: `${Math.round(utilisation * 100)}% of ${spec.capacity.toLocaleString()} MT capacity` },
+        { name: "Port Compatibility", score: Math.round(portScore), note: `${destPort?.congestion ?? "Moderate"} congestion · berth ${maxDraft} m` },
+        { name: "Voyage Economics", score: economicsScore, note: `$${freightMid.toFixed(1)} / MT indicative` },
+        { name: "Availability & Waiting", score: waitScore, note: `${waitingDays} days expected idle` },
+        { name: "Contract Duration Fit", score: durationScore, note: `${req.contractMonths}-month commitment` },
+      ],
+      summary: portCompatible
+        ? `${vessel} tonnage covers ${req.quantityMt.toLocaleString()} MT of ${req.cargo.toLowerCase()} on ${req.origin} → ${req.destination} at roughly $${freightMid.toFixed(1)}/MT, with about ${waitingDays} days of expected waiting.`
+        : `${vessel} tonnage is draft-restricted for ${req.destination}; lightering or a part cargo would be required, adding cost and delay.`,
+    };
+  });
+
+  const sorted = [...matches].sort((a, b) => b.score - a.score);
+  const best = sorted[0]!;
+  best.recommended = true;
+
+  return {
+    matches: sorted,
+    rationale: `${best.vessel} is the strongest match for ${req.quantityMt.toLocaleString()} MT of ${req.cargo.toLowerCase()} laycan ${req.requiredDate}. It combines the closest capacity fit, a workable arrival draft at ${req.destination}, and the lowest expected waiting time, giving an optimisation score of ${best.score}/100 against $${best.freightLow}–${best.freightHigh}/MT indicative freight.`,
   };
 }
