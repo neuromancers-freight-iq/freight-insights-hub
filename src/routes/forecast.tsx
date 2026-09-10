@@ -169,14 +169,14 @@ function ForecastPage() {
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
               label="Predicted Freight Rate"
-              value={`$${result.rate.toFixed(2)}`}
+              value={`₹${(result.rate * 100).toFixed(2)}`}
               unit="/ MT"
               caption={`${origin} → ${destination} · ${vessel}`}
               accent
             />
             <StatCard
               label="Expected Range"
-              value={`$${result.low.toFixed(2)} – $${result.high.toFixed(2)}`}
+              value={`₹${(result.low*100).toFixed(2)} – ₹${(result.high*100).toFixed(2)}`}
               caption="80% confidence interval"
             />
             <StatCard
