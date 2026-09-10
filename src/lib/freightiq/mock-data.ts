@@ -6,6 +6,8 @@ import type {
   VesselClass,
 } from "./types";
 
+export const INR_RATE = 83;
+
 export const CARGO_TYPES: CargoType[] = ["Coal", "Iron Ore", "Steel Products"];
 
 export const VESSEL_CLASSES: VesselClass[] = [

@@ -275,3 +275,25 @@ export function formatUsd(value: number) {
   if (Math.abs(value) >= 1_000) return `$${(value / 1_000).toFixed(0)}K`;
   return `$${value.toFixed(0)}`;
 }
+
+export function toIndianCommas(n: number) {
+  const isNegative = n < 0;
+  const s = Math.abs(Math.round(n)).toString();
+  const lastThree = s.substring(s.length - 3);
+  const otherNumbers = s.substring(0, s.length - 3);
+  const result = otherNumbers !== '' ? otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + lastThree : s;
+  return isNegative ? "-" + result : result;
+}
+
+export function formatInr(value: number) {
+  const inr = value * 83;
+  const absInr = Math.abs(inr);
+  if (absInr >= 10_000_000) return `₹${(inr / 10_000_000).toFixed(2)} Cr`;
+  if (absInr >= 100_000) return `₹${(inr / 100_000).toFixed(2)} L`;
+  return `₹${toIndianCommas(inr)}`;
+}
+
+export function formatInrRate(value: number) {
+  const inr = value * 83;
+  return `₹${toIndianCommas(inr)}`;
+}
