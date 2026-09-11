@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="FreightIQ favicon">
+  <defs>
+    <linearGradient id="bg" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#081826"/>
+      <stop offset="100%" stop-color="#0f2438"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" x2="100%" y1="0%" y2="100%">
+      <stop offset="0%" stop-color="#ffb703"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#bg)"/>
+  <path d="M12 38h30.5l7.5 8H12z" fill="#dfeaf5" opacity="0.12"/>
+  <path d="M14 34h26l6 10H14z" fill="url(#accent)" opacity="0.92"/>
+  <path d="M19 20h19.5L38 34H17z" fill="#eaf3ff" opacity="0.9"/>
+  <path d="M27 16h6v12h-6z" fill="#f8fbff"/>
+  <path d="M20 38h18v3H20z" fill="#dfeaf5" opacity="0.8"/>
+  <path d="M13 42c8.5-6 13.5-9.5 19.5-14 3.4-2.5 8.5-4.4 17.5-9.5" fill="none" stroke="#81d4ff" stroke-width="2.5" stroke-linecap="round"/>
+  <circle cx="48" cy="18" r="4.2" fill="#81d4ff"/>
+</svg>
