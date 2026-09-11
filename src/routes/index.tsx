@@ -134,7 +134,7 @@ function Homepage() {
               </Link>
 
               <Link
-                to="/voyage-planner"
+                to="/voyage-planner"n
                 className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 px-5 py-3 text-sm font-semibold text-foreground transition-colors hover:bg-surface-raised"
               >
                 <Compass className="size-4" />
